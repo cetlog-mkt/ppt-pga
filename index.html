@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CETLOG • Programa Ejecutivo en Gestión Aduanera (PGA)</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              950: '#060C17',
+              900: '#0B1526',
+              800: '#14233C',
+              700: '#1E3354',
+            },
+            cetlog: {
+              orange: '#F36F21',
+              orangeDark: '#D95A10',
+              orangeLight: '#FF8A42',
+            },
+            surface: {
+              canvas: '#F4F7FB',
+              soft: '#E8EEF7',
+            }
+          },
+          fontFamily: {
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['"Inter"', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --navy: #0B1526;
+      --orange: #F36F21;
+      --canvas: #F4F7FB;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--canvas);
+      color: var(--navy);
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Slide Engine */
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.985) translateY(10px);
+      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  visibility 0.5s;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+      z-index: 10;
+    }
+
+    /* Staggered element animations inside active slide */
+    .slide .reveal {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .slide.active .reveal {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .slide.active .delay-1 { transition-delay: 0.05s; }
+    .slide.active .delay-2 { transition-delay: 0.12s; }
+    .slide.active .delay-3 { transition-delay: 0.18s; }
+    .slide.active .delay-4 { transition-delay: 0.24s; }
+    .slide.active .delay-5 { transition-delay: 0.30s; }
+
+    /* Crisp High-Readability Cards (Stripe / Apple Keynote Style) */
+    .card-light {
+      background: #FFFFFF;
+      border: 1px solid rgba(11, 21, 38, 0.09);
+      box-shadow: 0 16px 36px -12px rgba(11, 21, 38, 0.09), 0 2px 6px rgba(11, 21, 38, 0.04);
+    }
+
+    .card-orange-highlight {
+      background: #FFFFFF;
+      border: 2px solid #F36F21;
+      box-shadow: 0 20px 44px -12px rgba(243, 111, 33, 0.2), 0 4px 12px rgba(11, 21, 38, 0.06);
+    }
+
+    .card-soft-orange {
+      background: linear-gradient(155deg, #FFF7F2 0%, #FFFFFF 100%);
+      border: 2px solid #F36F21;
+      box-shadow: 0 20px 44px -12px rgba(243, 111, 33, 0.18);
+    }
+
+    /* Bright Technical Grid Background */
+    .bg-grid-light {
+      background-color: #F4F7FB;
+      background-image:
+        radial-gradient(circle at 86% 14%, rgba(243, 111, 33, 0.09) 0%, transparent 42%),
+        radial-gradient(circle at 12% 88%, rgba(11, 21, 38, 0.05) 0%, transparent 45%),
+        linear-gradient(to right, rgba(11, 21, 38, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(11, 21, 38, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px;
+    }
+
+    /* 3D Flip Card System for Slide 3 */
+    .flip-perspective {
+      perspective: 1400px;
+    }
+
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      cursor: pointer;
+    }
+
+    .flip-card.flipped .flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 1.5rem;
+      overflow: hidden;
+    }
+
+    .flip-face-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Module Detail Transition (Slide 4) */
+    @keyframes panelFadeIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .module-panel-animate {
+      animation: panelFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Pulse indicator */
+    @keyframes softPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(243, 111, 33, 0.42); }
+      50% { box-shadow: 0 0 0 12px rgba(243, 111, 33, 0); }
+    }
+    .pulse-orange {
+      animation: softPulse 2.6s infinite;
+    }
+
+    /* Custom Scrollbar inside modals only */
+    .modal-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .modal-scroll::-webkit-scrollbar-track {
+      background: rgba(11, 21, 38, 0.06);
+      border-radius: 99px;
+    }
+    .modal-scroll::-webkit-scrollbar-thumb {
+      background: rgba(243, 111, 33, 0.65);
+      border-radius: 99px;
+    }
+  </style>
+</head>
+<body class="bg-surface-canvas text-navy-900 select-none">
+
+  <!-- =========================================================
+       TOP BAR (Clean & High-Contrast on All Slides)
+  ========================================================== -->
+  <header id="top-bar" class="fixed top-0 left-0 right-0 z-40 px-6 md:px-10 py-3.5 flex items-center justify-between pointer-events-none">
+    <!-- Brand Mark -->
+<div id="brand-pill" class="pointer-events-auto flex items-center gap-4 px-4 py-3 rounded-full backdrop-blur-md border transition-all duration-300 bg-white/90 border-slate-200 text-navy-900 shadow-md">
+
+  <img
+    src="Media/logo-cetlog.png"
+    alt="CETLOG"
+    class="h-10 w-auto object-contain"
+  />
+
+</div>
+
+    <!-- Presenter Controls -->
+    <div class="pointer-events-auto flex items-center gap-2.5">
+      <button
+        id="btn-fullscreen"
+        type="button"
+        onclick="toggleFullscreen()"
+        class="flex items-center gap-2 px-4 py-2 rounded-full bg-cetlog-orange hover:bg-cetlog-orangeDark text-white text-xs font-display font-bold shadow-md transition-all duration-200"
+      >
+        <i id="fs-icon" data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+        <span id="fs-label">Modo Pantalla Completa</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       MAIN PRESENTATION DECK (8 SLIDES)
+  ========================================================== -->
+  <main id="deck" class="relative w-screen h-screen overflow-hidden">
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 1: PORTADA DE IMPACTO (VIDEO + OVERLAY EQUILIBRADO)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-1" class="slide active flex items-center justify-center bg-navy-900">
+      <!-- Background Video + Fallback Image -->
+      <div class="absolute inset-0 z-0 overflow-hidden">
+        <img
+          src="Media/por01.jpg"
+          alt="Puerto Portacontenedores"
+          class="absolute inset-0 w-full h-full object-cover opacity-75"
+        />
+        <video
+          id="media-s1-video"
+          class="absolute inset-0 w-full h-full object-cover"
+          autoplay
+          loop
+          muted
+          playsinline
+          poster="Media/por01.jpg"
+        >
+          <source src="Media/video01.mp4" type="video/mp4" />
+        </video>
+        <!-- Balanced Luminous Maritime Scrim -->
+        <div class="absolute inset-0 bg-gradient-to-b from-navy-900/60 via-navy-900/50 to-navy-950/75"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="relative z-10 max-w-6xl mx-auto px-8 text-center flex flex-col items-center">
+        <div class="reveal delay-1 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white text-navy-900 border border-white mb-6 shadow-xl">
+          <span class="w-2.5 h-2.5 rounded-full bg-cetlog-orange animate-ping"></span>
+          <span class="font-display font-extrabold tracking-[0.18em] text-xs md:text-sm uppercase">
+            EXCLUSIVO ENTRENADOS TCI
+          </span>
+        </div>
+
+        <h1 class="reveal delay-2 font-display font-black tracking-tight text-white leading-[1.04] text-4xl sm:text-5xl md:text-6xl lg:text-[68px] max-w-5xl drop-shadow-[0_6px_28px_rgba(6,12,23,0.7)]">
+          YA SABES MOVER LA CARGA POR EL MUNDO.
+        </h1>
+
+        <div class="reveal delay-3 mt-6 bg-white/95 backdrop-blur-md px-7 py-4 rounded-2xl border-2 border-cetlog-orange shadow-2xl max-w-4xl">
+          <p class="font-display font-black tracking-tight text-cetlog-orangeDark leading-[1.16] text-xl sm:text-2xl md:text-3xl lg:text-[32px]">
+            ¿SABES CÓMO LIBERARLA SIN PERDER MILES DE DÓLARES EN EL PUERTO?
+          </p>
+        </div>
+
+        <div class="reveal delay-4 mt-9">
+          <button
+            type="button"
+            onclick="goToSlide(1)"
+            class="inline-flex items-center gap-3 px-9 py-4 rounded-full bg-cetlog-orange hover:bg-cetlog-orangeLight text-white font-display font-extrabold text-base md:text-lg tracking-wide shadow-[0_12px_35px_rgba(243,111,33,0.55)] transition-all duration-300 transform hover:-translate-y-0.5 pulse-orange"
+          >
+            <span>INICIAR EXPERIENCIA PGA →</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 2: LA EVOLUCIÓN DE TU PERFIL (LIGHT HIGH-CONTRAST)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-2" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-5xl mx-auto pt-2">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-cetlog-orange/15 text-xs font-display font-extrabold tracking-[0.18em] uppercase text-cetlog-orangeDark">
+          TU EVOLUCIÓN PROFESIONAL
+        </span>
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[50px] leading-tight mt-1.5">
+          DE COORDINADOR DE CARGA A <span class="text-cetlog-orange">ESPECIALISTA 360°</span>
+        </h2>
+      </div>
+
+      <!-- 2-Column Visual Comparison -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl w-full mx-auto my-auto py-3 flex-1 max-h-[62vh]">
+
+        <!-- Left Card: NIVEL 1 TCI -->
+        <div class="reveal delay-2 card-light rounded-3xl overflow-hidden flex flex-col justify-between group">
+          <div class="relative h-28 lg:h-32 overflow-hidden shrink-0">
+            <img
+              id="media-s2-left"
+              src="Media/slide1.jpg"
+              alt="Transporte Internacional TCI"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <div class="absolute inset-0 bg-gradient-to-r from-navy-900/75 via-navy-900/35 to-transparent"></div>
+            <div class="absolute inset-0 p-5 flex items-center">
+              <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-navy-900 text-xs font-display font-extrabold tracking-widest uppercase shadow-md">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                NIVEL 1: TCI (ACTUAL)
+              </span>
+            </div>
+          </div>
+
+          <div class="p-6 lg:p-7 space-y-3 my-auto flex-1 flex flex-col justify-center bg-white">
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-surface-canvas border border-slate-200/80">
+              <div class="w-11 h-11 rounded-xl bg-navy-900/10 flex items-center justify-center shrink-0">
+                <i data-lucide="ship" class="w-6 h-6 text-navy-900"></i>
+              </div>
+              <span class="font-display font-bold text-base lg:text-xl text-navy-900">Fletes y Rutas Internacionales</span>
+            </div>
+
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-surface-canvas border border-slate-200/80">
+              <div class="w-11 h-11 rounded-xl bg-navy-900/10 flex items-center justify-center shrink-0">
+                <i data-lucide="globe-2" class="w-6 h-6 text-navy-900"></i>
+              </div>
+              <span class="font-display font-bold text-base lg:text-xl text-navy-900">Incoterms y Embarques</span>
+            </div>
+
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-surface-canvas border border-slate-200/80">
+              <div class="w-11 h-11 rounded-xl bg-navy-900/10 flex items-center justify-center shrink-0">
+                <i data-lucide="file-text" class="w-6 h-6 text-navy-900"></i>
+              </div>
+              <span class="font-display font-bold text-base lg:text-xl text-navy-900">Documentos de Transporte (BL / AWB)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Card: NIVEL 2 PGA -->
+        <div class="reveal delay-3 card-orange-highlight rounded-3xl overflow-hidden flex flex-col justify-between group">
+          <div class="relative h-28 lg:h-32 overflow-hidden shrink-0">
+            <img
+              id="media-s2-right"
+              src="Media/slide2.jpg"
+              alt="Gestión Aduanera PGA"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <div class="absolute inset-0 bg-gradient-to-r from-navy-900/80 via-cetlog-orange/45 to-transparent"></div>
+            <div class="absolute inset-0 p-5 flex items-center justify-between">
+              <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cetlog-orange text-white text-xs font-display font-extrabold tracking-widest uppercase shadow-lg">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+                NIVEL 2: PGA (GESTIÓN ADUANERA)
+              </span>
+              <span class="hidden sm:inline-block px-3 py-1 rounded-full bg-white text-cetlog-orangeDark text-[11px] font-display font-extrabold uppercase shadow">
+                El Salto Profesional
+              </span>
+            </div>
+          </div>
+
+          <div class="p-6 lg:p-7 space-y-3 my-auto flex-1 flex flex-col justify-center bg-gradient-to-b from-orange-50/55 to-white">
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-cetlog-orange/35 shadow-sm">
+              <div class="w-11 h-11 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="landmark" class="w-6 h-6 text-white"></i>
+              </div>
+              <span class="font-display font-extrabold text-base lg:text-xl text-navy-900">Numeración DAM y Tributos SUNAT</span>
+            </div>
+
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-cetlog-orange/35 shadow-sm">
+              <div class="w-11 h-11 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+              </div>
+              <span class="font-display font-extrabold text-base lg:text-xl text-navy-900">Permisos VUCE (Mercancías Restringidas)</span>
+            </div>
+
+            <div class="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-cetlog-orange/35 shadow-sm">
+              <div class="w-11 h-11 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="anchor" class="w-6 h-6 text-white"></i>
+              </div>
+              <span class="font-display font-extrabold text-base lg:text-xl text-navy-900">Desaduanaje en APM, DPW y Chancay</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Punchline -->
+      <div class="reveal delay-4 text-center max-w-5xl mx-auto">
+        <p class="inline-block px-7 py-3 rounded-2xl bg-white border border-slate-200 text-navy-900 font-display font-extrabold text-sm sm:text-base md:text-lg shadow-md">
+          “Las empresas no buscan a quien solo trae la carga, <span class="text-cetlog-orange">buscan a quien sabe sacarla del puerto.</span>”
+        </p>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 3: RETO INTERACTIVO EN VIVO ("¿QUÉ PASA SI...?")
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-3" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-5xl mx-auto pt-2">
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[52px] leading-tight">
+          3 ERRORES QUE CUESTAN <span class="text-cetlog-orange">MILES DE DÓLARES</span>
+        </h2>
+        <p class="text-sm sm:text-base md:text-lg text-slate-600 mt-1.5 font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-cetlog-orange"></i>
+          Haz clic en cada escenario para revelar cómo lo resuelves en PGA
+        </p>
+      </div>
+
+      <!-- 3 Interactive Flip Cards (Ultra-Legible White Front & Soft-Orange Highlighted Back) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl w-full mx-auto my-auto flex-1 max-h-[60vh] py-3">
+
+        <!-- Caso 1 -->
+        <div class="reveal delay-2 flip-perspective flip-card h-full" onclick="this.classList.toggle('flipped')">
+          <div class="flip-inner">
+            <!-- Front -->
+            <div class="flip-face card-light flex flex-col justify-between">
+              <div class="relative h-[42%] overflow-hidden shrink-0">
+                <img
+                  id="media-s3-c1"
+                  src="Media/juguetes.jpg"
+                  alt="Inspección y Almacén Aduanero"
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-navy-900/55 via-transparent to-navy-900/20"></div>
+                <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <div class="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg">
+                    <i data-lucide="shield-alert" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-white text-navy-900 text-xs font-display font-extrabold tracking-wider uppercase shadow">
+                    CASO 01
+                  </span>
+                </div>
+              </div>
+
+              <div class="p-6 flex-1 flex flex-col justify-between bg-white">
+                <p class="font-display font-extrabold text-xl lg:text-[22px] leading-snug text-navy-900 my-auto">
+                  Traes juguetes o suplementos y te toca <span class="text-red-600 underline decoration-red-300 decoration-2 underline-offset-4">CANAL ROJO</span> sin permiso previo.
+                </p>
+                <div class="flex items-center gap-2 text-xs font-display font-extrabold uppercase tracking-wider text-cetlog-orange pt-3 border-t border-slate-100">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  <span>Clic para revelar solución</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Back (Bright Soft Orange Card for Effortless TV Reading) -->
+            <div class="flip-face flip-face-back card-soft-orange flex flex-col justify-between p-7">
+              <div class="flex items-center justify-between">
+                <span class="px-3.5 py-1.5 rounded-full bg-cetlog-orange text-white text-xs font-display font-extrabold tracking-wider uppercase shadow-sm">
+                  SOLUCIÓN PGA • MÓDULO 3
+                </span>
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+              </div>
+              <div class="my-auto">
+                <p class="font-display font-extrabold text-xl lg:text-2xl leading-snug text-navy-900">
+                  SOLUCIÓN PGA (Módulo 3): <span class="text-cetlog-orangeDark">Dominas la plataforma VUCE</span> ante DIGESA, SENASA, DIGEMID y MTC.
+                </p>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold text-slate-500 pt-3 border-t border-orange-200/60">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-cetlog-orange"></i>
+                <span>Clic para volver</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caso 2 -->
+        <div class="reveal delay-3 flip-perspective flip-card h-full" onclick="this.classList.toggle('flipped')">
+          <div class="flip-inner">
+            <div class="flip-face card-light flex flex-col justify-between">
+              <div class="relative h-[42%] overflow-hidden shrink-0">
+                <img
+                  id="media-s3-c2"
+                  src="Media/ad.jpg"
+                  alt="Tributos e Impuestos Aduaneros"
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-navy-900/55 via-transparent to-navy-900/20"></div>
+                <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <div class="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg">
+                    <i data-lucide="badge-dollar-sign" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-white text-navy-900 text-xs font-display font-extrabold tracking-wider uppercase shadow">
+                    CASO 02
+                  </span>
+                </div>
+              </div>
+
+              <div class="p-6 flex-1 flex flex-col justify-between bg-white">
+                <p class="font-display font-extrabold text-xl lg:text-[22px] leading-snug text-navy-900 my-auto">
+                  El cliente paga <span class="text-amber-600 underline decoration-amber-300 decoration-2 underline-offset-4">6% de Ad Valorem</span> teniendo un TLC vigente.
+                </p>
+                <div class="flex items-center gap-2 text-xs font-display font-extrabold uppercase tracking-wider text-cetlog-orange pt-3 border-t border-slate-100">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  <span>Clic para revelar solución</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flip-face flip-face-back card-soft-orange flex flex-col justify-between p-7">
+              <div class="flex items-center justify-between">
+                <span class="px-3.5 py-1.5 rounded-full bg-cetlog-orange text-white text-xs font-display font-extrabold tracking-wider uppercase shadow-sm">
+                  SOLUCIÓN PGA • MÓDULO 2
+                </span>
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+              </div>
+              <div class="my-auto">
+                <p class="font-display font-extrabold text-xl lg:text-2xl leading-snug text-navy-900">
+                  SOLUCIÓN PGA (Módulo 2): Aplicas <span class="text-cetlog-orangeDark">Certificados de Origen, Valoración Aduanera y TLC</span> para ahorrar impuestos legalmente.
+                </p>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold text-slate-500 pt-3 border-t border-orange-200/60">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-cetlog-orange"></i>
+                <span>Clic para volver</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caso 3 -->
+        <div class="reveal delay-4 flip-perspective flip-card h-full" onclick="this.classList.toggle('flipped')">
+          <div class="flip-inner">
+            <div class="flip-face card-light flex flex-col justify-between">
+              <div class="relative h-[45%] overflow-hidden shrink-0">
+                <img
+                  id="media-s3-c3"
+                  src="Media/callao.jpg"
+                  alt="Contenedores en Puerto"
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-navy-900/55 via-transparent to-navy-900/20"></div>
+                <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <div class="w-12 h-12 rounded-2xl bg-cetlog-orange flex items-center justify-center shadow-lg">
+                    <i data-lucide="container" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-white text-navy-900 text-xs font-display font-extrabold tracking-wider uppercase shadow">
+                    CASO 03
+                  </span>
+                </div>
+              </div>
+
+              <div class="p-6 flex-1 flex flex-col justify-between bg-white">
+                <p class="font-display font-extrabold text-xl lg:text-[22px] leading-snug text-navy-900 my-auto">
+                  La carga llega a <span class="text-cetlog-orange underline decoration-orange-300 decoration-2 underline-offset-4">Chancay o Callao</span> y corren días de sobreestadía y almacenaje.
+                </p>
+                <div class="flex items-center gap-2 text-xs font-display font-extrabold uppercase tracking-wider text-cetlog-orange pt-3 border-t border-slate-100">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                  <span>Clic para revelar solución</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flip-face flip-face-back card-soft-orange flex flex-col justify-between p-7">
+              <div class="flex items-center justify-between">
+                <span class="px-3.5 py-1.5 rounded-full bg-cetlog-orange text-white text-xs font-display font-extrabold tracking-wider uppercase shadow-sm">
+                  SOLUCIÓN PGA • MÓDULOS 4 Y 5
+                </span>
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+              </div>
+              <div class="my-auto">
+                <p class="font-display font-extrabold text-xl lg:text-2xl leading-snug text-navy-900">
+                  SOLUCIÓN PGA (Módulos 4 y 5): Ejecutas <span class="text-cetlog-orangeDark">despachos anticipados (SDA), vistos buenos, aforos y retiros</span> sin demoras.
+                </p>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold text-slate-500 pt-3 border-t border-orange-200/60">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-cetlog-orange"></i>
+                <span>Clic para volver</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="reveal delay-5 text-center">
+        <span class="text-xs font-bold tracking-widest uppercase text-slate-500">
+          Entrenamiento práctico diseñado sobre casuística real peruana
+        </span>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 4: TU RUTA DE ENTRENAMIENTO (5 MÓDULOS INTERACTIVOS)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-4" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-5xl mx-auto pt-1">
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[48px] leading-tight">
+          LO QUE DOMINARÁS EN 5 MESES <span class="text-cetlog-orange">(100% APLICATIVO)</span>
+        </h2>
+        <p class="text-xs sm:text-sm md:text-base text-slate-600 mt-1 font-semibold flex items-center justify-center gap-2">
+          <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-cetlog-orange"></i>
+          Haz clic en cada módulo para ver las herramientas reales que operarás
+        </p>
+      </div>
+
+      <!-- Interactive 5-Module Horizontal Selector + Active Showcase Panel -->
+      <div class="max-w-7xl w-full mx-auto flex flex-col justify-center gap-4 my-auto flex-1 max-h-[65vh]">
+        <div id="module-tabs" class="reveal delay-2 grid grid-cols-5 gap-3">
+          <!-- Generated via JS -->
+        </div>
+
+        <div id="module-detail-card" class="reveal delay-3 card-orange-highlight rounded-3xl p-6 lg:p-7 flex flex-col justify-between flex-1 min-h-0">
+          <!-- Populated dynamically via selectModule(index) -->
+        </div>
+      </div>
+
+      <!-- Bottom Role Play Badge -->
+      <div class="reveal delay-4 text-center max-w-6xl mx-auto">
+        <div class="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white border-2 border-cetlog-orange/50 shadow-md">
+          <i data-lucide="award" class="w-4 h-4 text-cetlog-orange shrink-0"></i>
+          <span class="font-display font-extrabold text-[11px] sm:text-xs md:text-sm tracking-wide uppercase text-navy-900">
+            CADA MÓDULO CIERRA CON UN PROYECTO FINAL EN MODO ROLE PLAY SIMULANDO UN PUESTO REAL DE TRABAJO
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 5: TU SIGUIENTE PUESTO LABORAL (GRID 3x2 ULTRA LEGIBLE)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-5" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-6xl mx-auto pt-1">
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[48px] leading-tight">
+          PODRÁS POSTULAR A ESTOS <span class="text-cetlog-orange">6 PUESTOS CLAVE</span>
+        </h2>
+        <p class="text-xs sm:text-sm md:text-base text-slate-600 mt-1 font-semibold">
+          Domina las funciones exactas que buscan las agencias de aduanas, operadores y empresas importadoras/exportadoras
+        </p>
+      </div>
+
+      <!-- 3x2 High-Contrast White Cards with Top Photo Banner -->
+      <div class="reveal delay-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl w-full mx-auto my-auto flex-1 max-h-[67vh] py-2">
+
+        <!-- Tarjeta 1 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j1"
+              src="Media/P1.png"
+              alt="Asistente de Operaciones"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 01
+            </span>
+          </div>
+          <div class="p-3 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+              Asistente de Operaciones
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Logística, Tráfico o Despacho Aduanero
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j2"
+              src="Media/P2.png"
+              alt="Sectorista Aduanero"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 02
+            </span>
+          </div>
+          <div class="p-4 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+              Sectorista Aduanero
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Gestión integral de regímenes y despachos SUNAT
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j3"
+              src="Media/P3.png"
+              alt="Liquidador Junior"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 03
+            </span>
+          </div>
+          <div class="p-4 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+              Liquidador Junior
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Especialista en cálculo de tributos y liquidación de servicios
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j4"
+              src="Media/P4.png"
+              alt="Tramitador en Mercancías Restringidas"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 04
+            </span>
+          </div>
+          <div class="p-4 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-base lg:text-lg text-navy-900 leading-tight">
+              Tramitador en Mercancías Restringidas
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Gestor de permisos VUCE ante DIGEMID, DIGESA, SENASA y MTC
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 5 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j5"
+              src="Media/P5.png"
+              alt="Consultor de Comercio Exterior"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 05
+            </span>
+          </div>
+          <div class="p-4 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+              Consultor de Comercio Exterior
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Asesoría estratégica en normativa, TLC y costos logísticos
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 6 -->
+        <div class="card-light rounded-3xl overflow-hidden group flex flex-col justify-between">
+          <div class="relative h-[60%] overflow-hidden shrink-0">
+            <img
+              id="media-s5-j6"
+              src="Media/P6.png"
+              alt="Asistente de Importaciones y Exportaciones"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-cetlog-orange text-[10px] font-display font-extrabold uppercase tracking-wider text-white shadow">
+              PUESTO 06
+            </span>
+          </div>
+          <div class="p-4 lg:p-5 flex-1 flex flex-col justify-center bg-white">
+            <h3 class="font-display font-black text-base lg:text-lg text-navy-900 leading-tight">
+              Asistente de Importaciones y Exportaciones
+            </h3>
+            <p class="text-xs lg:text-sm text-slate-600 font-semibold mt-1">
+              Control operativo en empresas Comex
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="h-2"></div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 6: DIFERENCIALES DEL ENTRENAMIENTO (POR QUÉ CETLOG)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-6" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-5xl mx-auto pt-2">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-cetlog-orange/15 text-xs font-display font-extrabold tracking-[0.18em] uppercase text-cetlog-orangeDark">
+          POR QUÉ ENTRENAR EN CETLOG
+        </span>
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[50px] leading-tight mt-1.5">
+          NO ES UN CURSO MÁS. <span class="text-cetlog-orange">ES ENTRENAMIENTO TÉCNICO.</span>
+        </h2>
+      </div>
+
+      <!-- 4 Visual Impact Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-7xl w-full mx-auto my-auto flex-1 max-h-[61vh] py-3">
+
+        <!-- Card 1 -->
+        <div class="reveal delay-2 card-light rounded-3xl overflow-hidden flex flex-col justify-between group">
+          <div onclick="openLightbox('s6-d1')" class="relative h-[65%] overflow-hidden bg-slate-200 cursor-pointer shrink-0">
+            <div id="container-s6-d1" class="w-full h-full">
+              <img
+                src="Media/horas.JPG"
+                alt="164 Horas Totales"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </div>
+            <span class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow">
+              <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-center bg-white">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+              </div>
+              <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+                164 HORAS TOTALES
+              </h3>
+            </div>
+            <p class="text-sm text-slate-600 font-semibold leading-snug">
+              84h presenciales + 60h virtuales + 20h de retos reales desde casa
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="reveal delay-3 card-light rounded-3xl overflow-hidden flex flex-col justify-between group">
+          <div onclick="openLightbox('s6-d2')" class="relative h-[65%] overflow-hidden bg-slate-200 cursor-pointer shrink-0">
+            <div id="container-s6-d2" class="w-full h-full">
+              <video
+                src="Media/meto.mp4"
+                class="w-full h-full object-cover"
+                muted
+                playsinline
+                preload="metadata"
+              ></video>
+            </div>
+            <span class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-center bg-white">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="boxes" class="w-5 h-5 text-white"></i>
+              </div>
+              <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+                METODOLOGÍA VIVENCIAL
+              </h3>
+            </div>
+            <p class="text-sm text-slate-600 font-semibold leading-snug">
+              Pionner impreso + elementos a escala en laboratorio + Role Play + clases grabadas
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="reveal delay-4 card-light rounded-3xl overflow-hidden flex flex-col justify-between group">
+          <div onclick="openLightbox('s6-d3')" class="relative h-[65%] overflow-hidden bg-slate-200 cursor-pointer shrink-0">
+            <div id="container-s6-d3" class="w-full h-full">
+              <video
+                src="Media/rc.mp4"
+                class="w-full h-full object-cover"
+                muted
+                playsinline
+                preload="metadata"
+              ></video>
+            </div>
+            <span class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            </span>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-center bg-white">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="play" class="w-5 h-5 text-white"></i>
+              </div>
+              <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+                VISITA TÉCNICA GUIADA
+              </h3>
+            </div>
+            <p class="text-sm text-slate-600 font-semibold leading-snug">
+              Experiencia directa en empresas del sector logístico y aduanero
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+<div class="reveal delay-5 card-light rounded-3xl overflow-hidden flex flex-col justify-between group">
+
+  <div onclick="openLightbox('s6-d4')" class="relative h-[65%] overflow-hidden bg-slate-200 cursor-pointer shrink-0">
+
+    <div id="container-s6-d4" class="w-full h-full relative">
+
+      <video
+        src="Media/sistema.mp4"
+        class="w-full h-full object-cover"
+        muted
+        playsinline
+        preload="metadata"
+      ></video>
+
+      <!-- Botón Play -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+          <i data-lucide="play" class="w-7 h-7 text-navy-900 fill-current"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <span class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/90 text-navy-900 flex items-center justify-center shadow">
+      <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+    </span>
+
+  </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-center bg-white">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-xl bg-cetlog-orange flex items-center justify-center shrink-0">
+                <i data-lucide="monitor-check" class="w-5 h-5 text-white"></i>
+              </div>
+              <h3 class="font-display font-black text-lg lg:text-xl text-navy-900 leading-tight">
+                SOFTWARE REAL DE ADUANAS
+              </h3>
+            </div>
+            <p class="text-sm text-slate-600 font-semibold leading-snug">
+              Acceso a sistemas reales de gestión de carga y despacho
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="text-center">
+        <span class="text-xs font-bold text-slate-500">
+          Haz clic en cualquier imagen para ampliarla o usa “+ Video/Foto” para cargar evidencia real de CETLOG
+        </span>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 7: MENTORES EN CANCHA
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-7" class="slide flex flex-col justify-between bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Header -->
+      <div class="reveal delay-1 text-center max-w-5xl mx-auto pt-2">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-cetlog-orange/15 text-xs font-display font-extrabold tracking-[0.18em] uppercase text-cetlog-orangeDark">
+          MENTORES EN CANCHA
+        </span>
+        <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[48px] leading-tight mt-1.5">
+          ENTRENA CON ESPECIALISTAS <span class="text-cetlog-orange">ACTIVOS DEL RUBRO</span>
+        </h2>
+        <p class="text-sm sm:text-base md:text-lg text-slate-600 mt-1.5 font-semibold">
+          Profesionales con 7 a más de 20 años liderando operaciones reales en agencias de carga y aduanas
+        </p>
+      </div>
+
+      <!-- 3 Mentor Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl w-full mx-auto my-auto py-3">
+
+        <!-- Mentor 1 -->
+        <div class="reveal delay-2 card-light rounded-3xl p-7 lg:p-8 flex flex-col items-center text-center hover:border-cetlog-orange/60 transition-all duration-300">
+          <div class="relative mb-5">
+            <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full p-1 bg-gradient-to-tr from-cetlog-orange to-amber-400 shadow-lg">
+              <img
+                id="media-s7-m1"
+                src="Media/javier.png"
+                alt="Javier Espinoza"
+                class="w-full h-full rounded-full object-cover border-4 border-white"
+              />
+            </div>
+            <span class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-cetlog-orange text-xs font-display font-extrabold text-white whitespace-nowrap shadow-md">
+              +20 años exp.
+            </span>
+          </div>
+          <h3 class="font-display font-black text-xl lg:text-2xl text-navy-900 mt-2">
+            Javier Espinoza <span class="text-cetlog-orangeDark text-sm block font-extrabold mt-0.5">(+20 años exp.)</span>
+          </h3>
+          <div class="w-12 h-1 rounded-full bg-cetlog-orange/30 my-3"></div>
+          <p class="text-sm lg:text-base text-slate-600 font-medium leading-relaxed">
+            Jefe de Equipo en <strong class="text-navy-900 font-bold">InterLogistics</strong> | Experto en Normativa Aduanera, operaciones aéreas/marítimas y sistemas <strong class="text-cetlog-orangeDark font-bold">Indra/Consolida</strong>
+          </p>
+        </div>
+
+        <!-- Mentor 2 -->
+        <div class="reveal delay-3 card-light rounded-3xl p-7 lg:p-8 flex flex-col items-center text-center hover:border-cetlog-orange/60 transition-all duration-300">
+          <div class="relative mb-5">
+            <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full p-1 bg-gradient-to-tr from-cetlog-orange to-amber-400 shadow-lg">
+              <img
+                id="media-s7-m2"
+                src="Media/katia.png"
+                alt="Katia Barboza"
+                class="w-full h-full rounded-full object-cover border-4 border-white"
+              />
+            </div>
+            <span class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-cetlog-orange text-xs font-display font-extrabold text-white whitespace-nowrap shadow-md">
+              +10 años exp.
+            </span>
+          </div>
+          <h3 class="font-display font-black text-xl lg:text-2xl text-navy-900 mt-2">
+            Katia Barboza <span class="text-cetlog-orangeDark text-sm block font-extrabold mt-0.5">(+10 años exp.)</span>
+          </h3>
+          <div class="w-12 h-1 rounded-full bg-cetlog-orange/30 my-3"></div>
+          <p class="text-sm lg:text-base text-slate-600 font-medium leading-relaxed">
+            Técnica Aduanera y Sectorista en <strong class="text-navy-900 font-bold">CLS</strong> | Especialista y asesora en trámites <strong class="text-cetlog-orangeDark font-bold">VUCE (DIGESA/SENASA) y Drawback</strong>
+          </p>
+        </div>
+
+        <!-- Mentor 3 -->
+        <div class="reveal delay-4 card-light rounded-3xl p-7 lg:p-8 flex flex-col items-center text-center hover:border-cetlog-orange/60 transition-all duration-300">
+          <div class="relative mb-5">
+            <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full p-1 bg-gradient-to-tr from-cetlog-orange to-amber-400 shadow-lg">
+              <img
+                id="media-s7-m3"
+                src="Media/angelica.png"
+                alt="Angelica Velaochaga"
+                class="w-full h-full rounded-full object-cover border-4 border-white"
+              />
+            </div>
+            <span class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-cetlog-orange text-xs font-display font-extrabold text-white whitespace-nowrap shadow-md">
+              +7 años exp.
+            </span>
+          </div>
+          <h3 class="font-display font-black text-xl lg:text-2xl text-navy-900 mt-2">
+            Angelica Velaochaga <span class="text-cetlog-orangeDark text-sm block font-extrabold mt-0.5">(+7 años exp.)</span>
+          </h3>
+          <div class="w-12 h-1 rounded-full bg-cetlog-orange/30 my-3"></div>
+          <p class="text-sm lg:text-base text-slate-600 font-medium leading-relaxed">
+            Jefa de Operaciones en <strong class="text-navy-900 font-bold">CLS</strong> | Experta en gestión operativa de importación aérea/marítima y <strong class="text-cetlog-orangeDark font-bold">permisos SENASA</strong>
+          </p>
+        </div>
+
+      </div>
+
+      <div class="h-3"></div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────
+         SLIDE 8: CIERRE Y LLAMADO A LA ACCIÓN (HORARIOS + QR)
+    ─────────────────────────────────────────────────────── -->
+    <section id="slide-8" class="slide flex items-center justify-center bg-grid-light pt-16 pb-16 px-6 md:px-12">
+      <!-- Main Split Layout -->
+      <div class="relative z-10 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+
+        <!-- Left Side: Program Details + Investment Modal Button -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="reveal delay-1">
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cetlog-orange/15 border border-cetlog-orange/40 text-cetlog-orangeDark font-display font-extrabold text-xs tracking-widest uppercase">
+              INSCRIPCIONES ABIERTAS • BENEFICIO TCI
+            </span>
+            <h2 class="font-display font-black tracking-tight text-navy-900 text-3xl sm:text-4xl md:text-5xl lg:text-[52px] leading-[1.08] mt-3">
+              DA EL SIGUIENTE PASO EN TU CARRERA
+            </h2>
+          </div>
+
+          <!-- Clean High-Contrast Info Cards -->
+          <div class="reveal delay-2 grid grid-cols-1 gap-3">
+            <div class="card-light rounded-2xl p-4 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-cetlog-orange/15 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar-range" class="w-6 h-6 text-cetlog-orange"></i>
+              </div>
+              <div>
+                <span class="text-[11px] font-display font-bold uppercase tracking-wider text-slate-500">Duración</span>
+                <p class="font-display font-extrabold text-base lg:text-lg text-navy-900">5 Meses (Modalidad Híbrida)</p>
+              </div>
+            </div>
+
+            <div class="card-light rounded-2xl p-4 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-cetlog-orange/15 flex items-center justify-center shrink-0">
+                <i data-lucide="clock-3" class="w-6 h-6 text-cetlog-orange"></i>
+              </div>
+              <div>
+                <span class="text-[11px] font-display font-bold uppercase tracking-wider text-slate-500">Horarios Flexibles (Elige tu grupo)</span>
+                <p class="font-display font-extrabold text-base lg:text-lg text-navy-900 leading-snug">
+                  Jueves Virtual (7pm - 10pm) + Sábado (9am-1pm o 3pm-7pm) o Domingo (9am-1pm) Presencial en San Miguel
+                </p>
+              </div>
+            </div>
+
+            <div class="card-light rounded-2xl p-4 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-cetlog-orange/15 flex items-center justify-center shrink-0">
+                <i data-lucide="laptop" class="w-6 h-6 text-cetlog-orange"></i>
+              </div>
+              <div>
+                <span class="text-[11px] font-display font-bold uppercase tracking-wider text-slate-500">Requisitos</span>
+                <p class="font-display font-extrabold text-base lg:text-lg text-navy-900">Inglés básico (III+) y contar con laptop para talleres</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Investment Modal Trigger -->
+          <div class="reveal delay-3 pt-1">
+            <button
+              type="button"
+              onclick="openModal('modal-pricing')"
+              class="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-navy-900 hover:bg-cetlog-orange text-white font-display font-extrabold text-base md:text-lg transition-all duration-300 shadow-xl"
+            >
+              <i data-lucide="wallet" class="w-5 h-5 text-cetlog-orangeLight"></i>
+              <span>Ver Inversión y Medios de Pago</span>
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Highlighted White & Orange WhatsApp QR Card (Zero Glare for Mobile Scanning) -->
+        <div class="lg:col-span-5 reveal delay-4">
+          <div class="card-orange-highlight rounded-[2rem] p-6 lg:p-8 flex flex-col items-center text-center relative overflow-hidden">
+            <span class="px-4 py-1.5 rounded-full bg-cetlog-orange text-white font-display font-extrabold text-xs tracking-widest uppercase mb-4 shadow-md">
+              RESERVA INMEDIATA WHATSAPP
+            </span>
+
+            <!-- QR Container -->
+            <div class="bg-surface-canvas border border-slate-200 p-4 rounded-3xl shadow-inner mb-4">
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=6&color=0B1526&bgcolor=FFFFFF&data=https%3A%2F%2Fwa.me%2F51964367627%3Ftext%3DHola%2520CETLOG%2C%2520soy%2520entrenado%2520de%2520TCI%2520y%2520quiero%2520reservar%2520mi%2520cupo%2520en%2520PGA"
+                alt="Código QR WhatsApp CETLOG PGA"
+                class="w-44 h-44 lg:w-52 lg:h-52 object-contain block rounded-xl"
+              />
+            </div>
+
+            <h3 class="font-display font-black text-lg lg:text-2xl text-navy-900 leading-snug max-w-sm">
+              ESCANEA Y RESERVA TU VACANTE CON BENEFICIO TCI
+            </h3>
+
+            <a
+              href="https://wa.me/51964367627?text=Hola%20CETLOG,%20soy%20entrenado%20de%20TCI%20y%20quiero%20reservar%20mi%20cupo%20en%20PGA"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-4 inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-display font-black text-xl tracking-wider transition-all shadow-lg"
+            >
+              <i data-lucide="phone-call" class="w-5 h-5"></i>
+              <span>964 367 627</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================
+       BOTTOM NAVIGATION & PROGRESS BAR (SLIDES 1 - 8)
+  ========================================================== -->
+  <footer class="fixed bottom-0 left-0 right-0 z-40 px-6 md:px-10 py-3.5 flex items-center justify-between pointer-events-none">
+    <!-- Slide Counter -->
+    <div id="counter-pill" class="pointer-events-auto flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-md border transition-all duration-300 bg-white/90 border-slate-200 text-navy-900 shadow-md">
+      <span id="slide-counter" class="font-display font-extrabold text-xs md:text-sm tracking-wider">
+        01 <span class="opacity-45">/ 08</span>
+      </span>
+      <span class="hidden md:inline text-[11px] opacity-65 border-l border-navy-900/20 pl-3">
+        ← → o Espacio
+      </span>
+    </div>
+
+    <!-- Visual Progress Indicator -->
+    <div id="progress-dots" class="pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-4 py-2.5 rounded-full backdrop-blur-md border transition-all duration-300 bg-white/90 border-slate-200 shadow-md">
+      <!-- Generated via JS -->
+    </div>
+
+    <!-- Floating Prev / Next Buttons -->
+    <div class="pointer-events-auto flex items-center gap-2">
+      <button
+        id="btn-prev"
+        type="button"
+        onclick="prevSlide()"
+        class="w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-all disabled:opacity-30 bg-white/90 border-slate-200 text-navy-900 hover:border-cetlog-orange shadow-md"
+        title="Slide anterior (Flecha izquierda)"
+      >
+        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+      </button>
+      <button
+        id="btn-next"
+        type="button"
+        onclick="nextSlide()"
+        class="w-10 h-10 rounded-full bg-cetlog-orange hover:bg-cetlog-orangeDark border border-cetlog-orange flex items-center justify-center text-white shadow-lg transition-all disabled:opacity-30"
+        title="Siguiente slide (Flecha derecha o Espacio)"
+      >
+        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- =========================================================
+       MODAL 1: INVERSIÓN Y MEDIOS DE PAGO (SLIDE 8)
+  ========================================================== -->
+  <div id="modal-pricing" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-navy-950/65 backdrop-blur-md">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-7 md:p-9 relative shadow-2xl text-navy-900">
+      <button
+        type="button"
+        onclick="closeModal('modal-pricing')"
+        class="absolute top-5 right-5 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-navy-900 transition"
+      >
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="mb-6">
+        <span class="text-xs font-display font-extrabold tracking-[0.2em] uppercase text-cetlog-orange">
+          PROGRAMA EJECUTIVO EN GESTIÓN ADUANERA
+        </span>
+        <h3 class="font-display font-black text-2xl md:text-3xl text-navy-900 mt-1">
+          Inversión y Medios de Pago
+        </h3>
+      </div>
+
+      <!-- Pricing Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="rounded-2xl bg-surface-canvas border border-slate-200 p-5 text-center">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Matrícula</span>
+          <p class="font-display font-black text-3xl text-navy-900 mt-1">S/ 160</p>
+        </div>
+        <div class="rounded-2xl bg-orange-50 border-2 border-cetlog-orange p-5 text-center shadow-md">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-cetlog-orangeDark">5 Mensualidades</span>
+          <p class="font-display font-black text-3xl text-navy-900 mt-1">S/ 570</p>
+          <span class="text-[11px] font-semibold text-slate-600">cada mensualidad</span>
+        </div>
+        <div class="rounded-2xl bg-surface-canvas border border-slate-200 p-5 text-center">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Visita Técnica</span>
+          <p class="font-display font-black text-3xl text-navy-900 mt-1">S/ 65</p>
+        </div>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="rounded-2xl bg-surface-canvas border border-slate-200 p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <p class="text-xs font-display font-extrabold uppercase tracking-widest text-navy-900">
+            Medios de Pago Oficiales
+          </p>
+          <span class="px-3 py-1 rounded-full bg-navy-900 text-[11px] font-display font-bold text-white">
+            Titular: MTE Training &amp; Consulting S.A.C.
+          </span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="flex flex-col items-center justify-center py-3 px-4 rounded-xl bg-[#002A8D] text-white shadow-sm">
+            <span class="font-display font-black text-base">BCP</span>
+            <span class="text-[11px] text-white/80">Cta. Corriente</span>
+          </div>
+          <div class="flex flex-col items-center justify-center py-3 px-4 rounded-xl bg-[#004481] text-white shadow-sm">
+            <span class="font-display font-black text-base">BBVA</span>
+            <span class="text-[11px] text-white/80">Transferencia</span>
+          </div>
+          <div class="flex flex-col items-center justify-center py-3 px-4 rounded-xl bg-[#009A3E] text-white shadow-sm">
+            <span class="font-display font-black text-base">Interbank</span>
+            <span class="text-[11px] text-white/80">Cta. / CCI</span>
+          </div>
+          <div class="flex flex-col items-center justify-center py-3 px-4 rounded-xl bg-[#742284] text-white shadow-sm">
+            <span class="font-display font-black text-base">Yape</span>
+            <span class="text-[11px] text-white/80">Pago Directo</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-600 mt-4 text-center">
+          Cuentas a nombre de <strong class="text-navy-900">MTE Training &amp; Consulting S.A.C.</strong> • Envía tu constancia al WhatsApp <strong class="text-navy-900">964 367 627</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 2: LIGHTBOX GALERÍA AMPLIADA (SLIDE 6)
+  ========================================================== -->
+  <div id="modal-lightbox" class="fixed inset-0 z-50 hidden items-center justify-center p-6 bg-navy-950/85 backdrop-blur-xl">
+    <div class="relative max-w-5xl w-full flex flex-col items-center">
+      <div class="w-full flex items-center justify-between mb-4">
+        <span id="lightbox-title" class="font-display font-extrabold text-lg md:text-2xl text-white">
+          Vista Ampliada
+        </span>
+        <button
+          type="button"
+          onclick="closeLightbox()"
+          class="w-10 h-10 rounded-full bg-white/15 hover:bg-cetlog-orange flex items-center justify-center text-white transition"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="lightbox-body" class="w-full max-h-[78vh] rounded-3xl overflow-hidden border border-white/20 bg-navy-950 flex items-center justify-center shadow-2xl">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 3: PERSONALIZAR MEDIA (FOTOS / VIDEOS LOCALES)
+  ========================================================== -->
+  <div id="modal-media" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-navy-950/65 backdrop-blur-md">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full p-6 md:p-8 relative shadow-2xl max-h-[88vh] flex flex-col text-navy-900">
+      <button
+        type="button"
+        onclick="closeModal('modal-media')"
+        class="absolute top-5 right-5 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-navy-900 transition"
+      >
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="mb-4 pr-10">
+        <span class="text-xs font-display font-extrabold tracking-[0.2em] uppercase text-cetlog-orange">
+          MODO PRESENTADOR EN VIVO
+        </span>
+        <h3 class="font-display font-black text-2xl text-navy-900 mt-1">
+          Personalizar Media (Fotos y Videos Locales)
+        </h3>
+        <p class="text-xs md:text-sm text-slate-600 mt-1">
+          Selecciona archivos locales (.mp4, .webm, .jpg, .png) desde tu laptop para reemplazar cualquier video o fotografía en tiempo real.
+        </p>
+      </div>
+
+      <div class="overflow-y-auto modal-scroll pr-2 space-y-3 flex-1">
+        <!-- Slide 1 Video -->
+        <div class="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-surface-canvas border border-slate-200">
+          <div>
+            <p class="font-display font-bold text-sm text-navy-900">Slide 1 • Video de Portada (.mp4)</p>
+            <p id="status-s1-video" class="text-xs text-slate-500">Video portuario predeterminado</p>
+          </div>
+          <label class="cursor-pointer px-4 py-2 rounded-xl bg-cetlog-orange hover:bg-cetlog-orangeDark text-xs font-bold text-white transition shrink-0">
+            Elegir Video
+            <input type="file" accept="video/*" class="hidden" onchange="replaceMedia(this, 'media-s1-video', 'video', 'status-s1-video')" />
+          </label>
+        </div>
+
+        <!-- Slide 6 Diferenciales (Video o Foto) -->
+        <div class="p-3.5 rounded-2xl bg-orange-50/70 border border-cetlog-orange/30 space-y-2.5">
+          <p class="font-display font-extrabold text-xs uppercase tracking-widest text-cetlog-orangeDark">
+            Slide 6 • Diferenciales CETLOG (Soporta Video o Foto)
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200">
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-navy-900 truncate">164 Horas Totales</p>
+                <p id="status-s6-d1" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+              </div>
+              <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-cetlog-orange hover:bg-cetlog-orangeDark text-[11px] font-bold text-white shrink-0">
+                Subir
+                <input type="file" accept="image/*,video/*" class="hidden" onchange="replaceCardMedia(this, 's6-d1', '164 HORAS TOTALES')" />
+              </label>
+            </div>
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200">
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-navy-900 truncate">Metodología Vivencial</p>
+                <p id="status-s6-d2" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+              </div>
+              <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-cetlog-orange hover:bg-cetlog-orangeDark text-[11px] font-bold text-white shrink-0">
+                Subir
+                <input type="file" accept="image/*,video/*" class="hidden" onchange="replaceCardMedia(this, 's6-d2', 'METODOLOGÍA VIVENCIAL')" />
+              </label>
+            </div>
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200">
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-navy-900 truncate">Visita Técnica Guiada</p>
+                <p id="status-s6-d3" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+              </div>
+              <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-cetlog-orange hover:bg-cetlog-orangeDark text-[11px] font-bold text-white shrink-0">
+                Subir
+                <input type="file" accept="image/*,video/*" class="hidden" onchange="replaceCardMedia(this, 's6-d3', 'VISITA TÉCNICA GUIADA')" />
+              </label>
+            </div>
+            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200">
+              <div class="min-w-0">
+                <p class="font-bold text-xs text-navy-900 truncate">Software Real de Aduanas</p>
+                <p id="status-s6-d4" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+              </div>
+              <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-cetlog-orange hover:bg-cetlog-orangeDark text-[11px] font-bold text-white shrink-0">
+                Subir
+                <input type="file" accept="image/*,video/*" class="hidden" onchange="replaceCardMedia(this, 's6-d4', 'SOFTWARE REAL DE ADUANAS')" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other Slides Images -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 2 • Foto Nivel 1 (TCI)</p>
+              <p id="status-s2-left" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s2-left', 'image', 'status-s2-left')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 2 • Foto Nivel 2 (PGA)</p>
+              <p id="status-s2-right" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s2-right', 'image', 'status-s2-right')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 3 • Escenario 1 (Canal Rojo)</p>
+              <p id="status-s3-c1" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s3-c1', 'image', 'status-s3-c1')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 3 • Escenario 2 (TLC)</p>
+              <p id="status-s3-c2" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s3-c2', 'image', 'status-s3-c2')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 3 • Escenario 3 (Chancay/Callao)</p>
+              <p id="status-s3-c3" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s3-c3', 'image', 'status-s3-c3')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Asist. Operaciones</p>
+              <p id="status-s5-j1" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j1', 'image', 'status-s5-j1')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Sectorista Aduanero</p>
+              <p id="status-s5-j2" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j2', 'image', 'status-s5-j2')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Liquidador Junior</p>
+              <p id="status-s5-j3" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j3', 'image', 'status-s5-j3')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Tramitador VUCE</p>
+              <p id="status-s5-j4" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j4', 'image', 'status-s5-j4')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Consultor Comex</p>
+              <p id="status-s5-j5" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j5', 'image', 'status-s5-j5')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 5 • Asist. Impo/Expo</p>
+              <p id="status-s5-j6" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s5-j6', 'image', 'status-s5-j6')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 7 • Javier Espinoza</p>
+              <p id="status-s7-m1" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s7-m1', 'image', 'status-s7-m1')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 7 • Katia Barboza</p>
+              <p id="status-s7-m2" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s7-m2', 'image', 'status-s7-m2')" />
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-canvas border border-slate-200">
+            <div class="min-w-0">
+              <p class="font-display font-bold text-xs text-navy-900 truncate">Slide 7 • Angelica Velaochaga</p>
+              <p id="status-s7-m3" class="text-[11px] text-slate-500 truncate">Foto predeterminada</p>
+            </div>
+            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-cetlog-orange text-xs font-bold text-white transition shrink-0">
+              Cambiar
+              <input type="file" accept="image/*" class="hidden" onchange="replaceMedia(this, 'media-s7-m3', 'image', 'status-s7-m3')" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-end">
+        <button
+          type="button"
+          onclick="closeModal('modal-media')"
+          class="px-6 py-2.5 rounded-full bg-cetlog-orange hover:bg-cetlog-orangeDark text-sm font-display font-bold text-white transition"
+        >
+          Listo, volver a la presentación
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       PRESENTATION ENGINE & INTERACTIVE MODULES SCRIPT
+  ========================================================== -->
+  <script>
+    // ---------------------------------------------------------
+    // 1. SLIDE 4 DATA: 5 OPERATIONAL MODULES
+    // ---------------------------------------------------------
+    const modulesData = [
+      {
+        code: 'MÓDULO 01',
+        icon: 'file-spreadsheet',
+        title: 'OPERATIVIDAD DEL COMERCIO INTERNACIONAL',
+        points: [
+          'Proforma Invoice e INCOTERMS con enfoque aduanero',
+          'Documentos MBL, HBL, MAWB, HAWB y desgloses',
+          'Manifiesto de carga, direccionamientos TDI y Volante de Despacho',
+          'Simulación lúdica de ingreso de carga a DT/Puerto'
+        ]
+      },
+      {
+        code: 'MÓDULO 02',
+        icon: 'scale',
+        title: 'TÉCNICA ADUANERA',
+        points: [
+          'Ley General de Aduanas e Infracciones SUNAT',
+          'Clasificación arancelaria y Valoración en Aduana',
+          'Aplicación de TLC y Certificados de Origen',
+          'Cálculo real de tributos y recargos según producto'
+        ]
+      },
+      {
+        code: 'MÓDULO 03',
+        icon: 'shield-check',
+        title: 'MERCANCÍAS RESTRINGIDAS (VUCE)',
+        points: [
+          'Control SUNAT de mercancías restringidas/prohibidas',
+          'Uso real de la plataforma VUCE',
+          'Trámites ante DIGESA (ej. Registro y Autorización de Juguetes)',
+          'Trámites ante SENASA (Inspección y Certificados Fitosanitarios), DIGEMID y MTC'
+        ]
+      },
+      {
+        code: 'MÓDULO 04',
+        icon: 'laptop-2',
+        title: 'IMPORTACIONES, EXPORTACIONES Y PRE-LIQUIDACIÓN',
+        points: [
+          'Mandato electrónico y Modalidades/Plazos de destinación',
+          'Elaboración real de DAM y consulta de levante',
+          'Despacho Anticipado (SDA) y programación de nave',
+          'Atención de notificaciones SUNAT, Exportación Definitiva y Liquidación integral'
+        ]
+      },
+      {
+        code: 'MÓDULO 05',
+        icon: 'container',
+        title: 'GESTIÓN OPERATIVA DE DESADUANAJE',
+        points: [
+          'Vistos Buenos con Navieras, Agentes de Carga y Consolidadores',
+          'Gate In, Memo y devolución de contenedores vacíos',
+          'Retiros SADA en APM, DPW, CHANCAY y Aéreos',
+          'Operaciones de Aforo físico, previo, rotulado y trasegado'
+        ]
+      }
+    ];
+
+    let activeModuleIndex = 0;
+
+    function renderModules() {
+      const tabsEl = document.getElementById('module-tabs');
+      const detailEl = document.getElementById('module-detail-card');
+
+      tabsEl.innerHTML = modulesData.map((mod, idx) => {
+        const isActive = idx === activeModuleIndex;
+        return `
+          <button
+            type="button"
+            onclick="selectModule(${idx})"
+            class="group text-left rounded-2xl p-3.5 lg:p-4 transition-all duration-300 border flex flex-col justify-between gap-2 ${
+              isActive
+                ? 'bg-cetlog-orange border-cetlog-orange text-white shadow-[0_12px_28px_rgba(243,111,33,0.35)] -translate-y-1'
+                : 'bg-white hover:bg-orange-50/70 border-slate-200 hover:border-cetlog-orange/60 text-navy-900 shadow-sm'
+            }"
+          >
+            <div class="flex items-center justify-between w-full">
+              <span class="font-display font-black text-xs tracking-wider uppercase ${isActive ? 'text-white' : 'text-cetlog-orange'}">
+                ${mod.code}
+              </span>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-white/20 text-white' : 'bg-surface-canvas text-navy-900 group-hover:text-cetlog-orange'}">
+                <i data-lucide="${mod.icon}" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <p class="font-display font-extrabold text-xs lg:text-sm leading-tight line-clamp-2 ${isActive ? 'text-white' : 'text-navy-900'}">
+              ${mod.title}
+            </p>
+          </button>
+        `;
+      }).join('');
+
+      const activeMod = modulesData[activeModuleIndex];
+      detailEl.innerHTML = `
+        <div class="module-panel-animate flex flex-col justify-between h-full gap-4">
+          <div class="flex items-center justify-between gap-4 border-b border-slate-200 pb-3.5">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-cetlog-orange flex items-center justify-center shadow-lg shrink-0">
+                <i data-lucide="${activeMod.icon}" class="w-6 h-6 lg:w-7 lg:h-7 text-white"></i>
+              </div>
+              <div>
+                <span class="text-xs font-display font-extrabold tracking-[0.2em] uppercase text-cetlog-orangeDark">
+                  ${activeMod.code} • ENTRENAMIENTO APLICATIVO
+                </span>
+                <h3 class="font-display font-black text-xl sm:text-2xl lg:text-3xl text-navy-900 leading-tight">
+                  ${activeMod.title}
+                </h3>
+              </div>
+            </div>
+            <span class="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-canvas border border-slate-200 text-xs font-display font-bold text-navy-900 shrink-0">
+              4 Herramientas Clave
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 my-auto">
+            ${activeMod.points.map((pt, i) => `
+              <div class="flex items-center gap-3.5 p-3.5 lg:p-4 rounded-2xl bg-surface-canvas border border-slate-200/90">
+                <div class="w-9 h-9 rounded-xl bg-navy-900 flex items-center justify-center font-display font-black text-xs text-white shrink-0">
+                  0${i + 1}
+                </div>
+                <p class="font-display font-bold text-sm lg:text-lg text-navy-900 leading-snug">
+                  ${pt}
+                </p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function selectModule(idx) {
+      activeModuleIndex = idx;
+      renderModules();
+      if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+        document.activeElement.blur();
+      }
+    }
+
+    renderModules();
+
+    // ---------------------------------------------------------
+    // 2. PRESENTATION SLIDE ENGINE (8 SLIDES)
+    // ---------------------------------------------------------
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    const counterEl = document.getElementById('slide-counter');
+    const progressContainer = document.getElementById('progress-dots');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    function buildProgressDots() {
+      progressContainer.innerHTML = '';
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.ariaLabel = `Ir al slide ${i + 1}`;
+        dot.onclick = () => goToSlide(i);
+        dot.className = 'h-2 rounded-full transition-all duration-300 ' +
+          (i === currentSlide
+            ? 'w-9 bg-cetlog-orange shadow-[0_0_10px_rgba(243,111,33,0.6)]'
+            : 'w-2.5 bg-navy-900/20 hover:bg-navy-900/45');
+        progressContainer.appendChild(dot);
+      }
+    }
+
+    function updateUI() {
+      slides.forEach((slide, idx) => {
+        slide.classList.toggle('active', idx === currentSlide);
+      });
+
+      const formatted = String(currentSlide + 1).padStart(2, '0');
+      const totalFormatted = String(totalSlides).padStart(2, '0');
+      counterEl.innerHTML = `${formatted} <span class="opacity-45">/ ${totalFormatted}</span>`;
+
+      btnPrev.disabled = currentSlide === 0;
+      btnNext.disabled = currentSlide === totalSlides - 1;
+
+      buildProgressDots();
+
+      if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+        document.activeElement.blur();
+      }
+    }
+
+    function goToSlide(index) {
+      if (index < 0 || index >= totalSlides) return;
+      currentSlide = index;
+      updateUI();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateUI();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateUI();
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 3. MODALS & FULLSCREEN TV MODE
+    // ---------------------------------------------------------
+    function isAnyModalOpen() {
+      return !document.getElementById('modal-pricing').classList.contains('hidden') ||
+             !document.getElementById('modal-media').classList.contains('hidden') ||
+             !document.getElementById('modal-lightbox').classList.contains('hidden');
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    ['modal-pricing', 'modal-media'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        if (e.target.id === id) closeModal(id);
+      });
+    });
+
+    document.getElementById('modal-lightbox').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-lightbox') closeLightbox();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal('modal-pricing');
+        closeModal('modal-media');
+        closeLightbox();
+        return;
+      }
+
+      if (isAnyModalOpen()) return;
+
+      if (e.key === 'ArrowRight' || e.code === 'Space') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const label = document.getElementById('fs-label');
+      const icon = document.getElementById('fs-icon');
+      if (document.fullscreenElement) {
+        label.textContent = 'Salir Pantalla Completa';
+        icon.setAttribute('data-lucide', 'minimize-2');
+      } else {
+        label.textContent = 'Modo Pantalla Completa (TV)';
+        icon.setAttribute('data-lucide', 'maximize-2');
+      }
+      lucide.createIcons();
+    });
+
+    // ---------------------------------------------------------
+    // 4. LOCAL MEDIA UPLOADER & LIGHTBOX (SLIDES 1-7)
+    // ---------------------------------------------------------
+    const objectUrls = {};
+
+    const cardMediaState = {
+      's6-d1': {
+        type: 'image',
+        src: 'Media/horas.jpg',
+        title: '164 HORAS TOTALES'
+      },
+      's6-d2': {
+        type: 'video',
+        src: 'Media/meto.mp4',
+        title: 'METODOLOGÍA VIVENCIAL'
+      },
+      's6-d3': {
+        type: 'video',
+        src: 'Media/rc.mp4',
+        title: 'VISITA TÉCNICA GUIADA'
+      },
+      's6-d4': {
+        type: 'video',
+        src: 'Media/sistema.mp4',
+        title: 'SOFTWARE REAL DE ADUANAS'
+      }
+    };
+
+    function replaceMedia(inputEl, targetId, mediaType, statusId) {
+      const file = inputEl.files && inputEl.files[0];
+      if (!file) return;
+
+      if (objectUrls[targetId]) {
+        URL.revokeObjectURL(objectUrls[targetId]);
+      }
+
+      const blobUrl = URL.createObjectURL(file);
+      objectUrls[targetId] = blobUrl;
+
+      const targetEl = document.getElementById(targetId);
+      if (mediaType === 'video') {
+        targetEl.innerHTML = '';
+        targetEl.src = blobUrl;
+        targetEl.load();
+        targetEl.play().catch(() => {});
+      } else {
+        targetEl.src = blobUrl;
+      }
+
+      const statusEl = document.getElementById(statusId);
+      if (statusEl) {
+        statusEl.textContent = `Cargado: ${file.name}`;
+        statusEl.classList.remove('text-slate-500');
+        statusEl.classList.add('text-emerald-600', 'font-bold');
+      }
+    }
+
+    function replaceCardMedia(inputEl, key, title) {
+      const file = inputEl.files && inputEl.files[0];
+      if (!file) return;
+
+      if (objectUrls[key]) {
+        URL.revokeObjectURL(objectUrls[key]);
+      }
+
+      const blobUrl = URL.createObjectURL(file);
+      objectUrls[key] = blobUrl;
+
+      const isVideo = file.type.startsWith('video/');
+      const container = document.getElementById(`container-${key}`);
+
+      if (isVideo) {
+        container.innerHTML = `
+          <video
+            src="${blobUrl}"
+            class="w-full h-full object-cover"
+            controls
+            autoplay
+            loop
+            muted
+            playsinline
+            onclick="event.stopPropagation()"
+          ></video>
+        `;
+        cardMediaState[key] = { type: 'video', src: blobUrl, title };
+      } else {
+        container.innerHTML = `
+          <img
+            src="${blobUrl}"
+            alt="${title}"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        `;
+        cardMediaState[key] = { type: 'image', src: blobUrl, title };
+      }
+
+      const statusEl = document.getElementById(`status-${key}`);
+      if (statusEl) {
+        statusEl.textContent = `Cargado: ${file.name}`;
+        statusEl.classList.remove('text-slate-500');
+        statusEl.classList.add('text-emerald-600', 'font-bold');
+      }
+    }
+
+    function openLightbox(key) {
+      const item = cardMediaState[key];
+      if (!item) return;
+
+      document.getElementById('lightbox-title').textContent = item.title;
+      const bodyEl = document.getElementById('lightbox-body');
+
+      if (item.type === 'video') {
+        bodyEl.innerHTML = `
+          <video
+            src="${item.src}"
+            class="w-full max-h-[76vh] object-contain"
+            controls
+            autoplay
+            playsinline
+          ></video>
+        `;
+      } else {
+        bodyEl.innerHTML = `
+          <img
+            src="${item.src}"
+            alt="${item.title}"
+            class="w-full max-h-[76vh] object-contain"
+          />
+        `;
+      }
+
+      openModal('modal-lightbox');
+    }
+
+    function closeLightbox() {
+      const bodyEl = document.getElementById('lightbox-body');
+      bodyEl.innerHTML = '';
+      closeModal('modal-lightbox');
+    }
+
+    // Initial render
+    lucide.createIcons();
+    updateUI();
+  </script>
+</body>
+</html>
